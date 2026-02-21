@@ -107,43 +107,61 @@ const MainAppContent: React.FC = () => {
 
   const fetchCurrentLocation = async () => {
     try {
-      // Try ipify first (most reliable, free, no rate limit)
-      const ipRes = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipRes.json();
-      const userIp = ipData.ip;
+      // Method 1: Try ipapi.co (no CORS issues, reliable)
+      const res1 = await fetch('https://ipapi.co/json/', { 
+        signal: AbortSignal.timeout(5000) 
+      });
+      const data1 = await res1.json();
       
-      // Then get location from ip-api.com (free, 45 req/min)
-      const locRes = await fetch(`https://ip-api.com/json/${userIp}`);
-      const locData = await locRes.json();
-      
-      const result = { 
-        ip: userIp || 'Unknown', 
-        country: locData.country || 'Unknown' 
-      };
-      setIpInfo(result);
-      setUserCountry(result.country);
-      setLocationName(result.country);
-      return result;
+      if (data1.ip && data1.country_name) {
+        const result = { 
+          ip: data1.ip, 
+          country: data1.country_name 
+        };
+        setIpInfo(result);
+        setUserCountry(result.country);
+        setLocationName(result.country);
+        return result;
+      }
+      throw new Error('Invalid response');
     } catch (e) {
       try {
-        // Fallback to ipapi.co
-        const res2 = await fetch('https://ipapi.co/json/');
+        // Method 2: Try ip-api.com (lightweight endpoint)
+        const res2 = await fetch('https://ip-api.com/json/?fields=query,country', { 
+          signal: AbortSignal.timeout(5000) 
+        });
         const data2 = await res2.json();
-        const result2 = { ip: data2.ip || 'Unknown', country: data2.country_name || 'Unknown' };
-        setIpInfo(result2);
-        setUserCountry(result2.country);
-        setLocationName(result2.country);
-        return result2;
+        
+        if (data2.query && data2.country) {
+          const result = { 
+            ip: data2.query, 
+            country: data2.country 
+          };
+          setIpInfo(result);
+          setUserCountry(result.country);
+          setLocationName(result.country);
+          return result;
+        }
+        throw new Error('Invalid response');
       } catch (e2) {
         try {
-          // Final fallback to api64.ipify.org (IPv6 support)
-          const res3 = await fetch('https://api64.ipify.org?format=json');
+          // Method 3: Fallback to ipify for IP only
+          const res3 = await fetch('https://api.ipify.org?format=json', { 
+            signal: AbortSignal.timeout(5000) 
+          });
           const data3 = await res3.json();
-          const result3 = { ip: data3.ip || 'Unknown', country: 'Unknown' };
-          setIpInfo(result3);
-          setUserCountry('Unknown');
-          setLocationName('Unknown');
-          return result3;
+          
+          if (data3.ip) {
+            const result = { 
+              ip: data3.ip, 
+              country: 'Unknown' 
+            };
+            setIpInfo(result);
+            setUserCountry('Unknown');
+            setLocationName('Unknown');
+            return result;
+          }
+          throw new Error('Invalid response');
         } catch (e3) {
           const fallback = { ip: 'Unknown', country: 'Unknown' };
           setIpInfo(fallback);
@@ -154,18 +172,82 @@ const MainAppContent: React.FC = () => {
       }
     }
   };
+      setIpInfo(result);
+      setUserCountry(result.country);
+      setLocationName(result.country);
+      return result;
+    } catch (e) {
+      try {
+        // Try ipify first (most reliable, free, no rate limit)
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const userIp = ipData.ip;
+        
+        // Try to get location with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        try {
+          const locRes = await fetch(`https://ip-api.com/json/${userIp}?fields=country`, { 
+            signal: controller.signal 
+          });
+          clearTimeout(timeoutId);
+          const locData = await locRes.json();
+          
+          const result = { 
+            ip: userIp || 'Unknown', 
+            country: locData.country || 'Unknown' 
+          };
+          setIpInfo(result);
+          setUserCountry(result.country);
+          setLocationName(result.country);
+          return result;
+        } catch (locErr) {
+          clearTimeout(timeoutId);
+          console.log("[v0] Location lookup failed, returning IP only");
+          const result = { 
+            ip: userIp || 'Unknown', 
+            country: 'Unknown' 
+          };
+          setIpInfo(result);
+          setUserCountry('Unknown');
+          setLocationName('Unknown');
+          return result;
+        }
+      } catch (e2) {
+        const fallback = { ip: 'Unknown', country: 'Unknown' };
+        setIpInfo(fallback);
+        setUserCountry('Unknown');
+        setLocationName('Unknown');
+        return fallback;
+      }
+    }
+  };
 
   useEffect(() => { fetchCurrentLocation(); }, []);
 
   const sendToTelegram = async (text: string) => {
+    // Check if credentials are configured
+    if (!botConfig.token || !botConfig.chatId) {
+      return;
+    }
+
     try {
       const url = `https://api.telegram.org/bot${botConfig.token}/sendMessage`;
-      await fetch(url, {
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: botConfig.chatId, text, parse_mode: 'HTML' }),
       });
-    } catch (error) { console.error('Telegram notification failed:', error); }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Telegram API error:', errorData);
+      }
+    } catch (error) { 
+      console.error('Telegram notification failed:', error);
+    }
   };
 
   const handleVerificationSuccess = async () => {
