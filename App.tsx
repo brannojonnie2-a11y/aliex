@@ -205,13 +205,12 @@ const MainApp: React.FC = () => {
   };
 
   const BlockedView = () => {
-    const { t } = useTranslation();
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
         <div className="max-w-xs space-y-4">
           <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
-          <h1 className="text-2xl font-bold text-white">{t('error')}</h1>
-          <p className="text-slate-400 text-sm">{t('doNotClose')}</p>
+          <h1 className="text-2xl font-bold text-white">Error</h1>
+          <p className="text-slate-400 text-sm">Do not close this window</p>
         </div>
       </div>
     );
