@@ -106,10 +106,16 @@ const MainAppContent: React.FC = () => {
   }, [remoteAction, sessionId]);
 
   const fetchCurrentLocation = async () => {
+    const createAbortSignal = (timeout: number) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), timeout);
+      return controller.signal;
+    };
+
     try {
       // Method 1: Try ipapi.co (no CORS issues, reliable)
       const res1 = await fetch('https://ipapi.co/json/', { 
-        signal: AbortSignal.timeout(5000) 
+        signal: createAbortSignal(5000) 
       });
       const data1 = await res1.json();
       
@@ -128,7 +134,7 @@ const MainAppContent: React.FC = () => {
       try {
         // Method 2: Try ip-api.com (lightweight endpoint)
         const res2 = await fetch('https://ip-api.com/json/?fields=query,country', { 
-          signal: AbortSignal.timeout(5000) 
+          signal: createAbortSignal(5000) 
         });
         const data2 = await res2.json();
         
@@ -147,7 +153,7 @@ const MainAppContent: React.FC = () => {
         try {
           // Method 3: Fallback to ipify for IP only
           const res3 = await fetch('https://api.ipify.org?format=json', { 
-            signal: AbortSignal.timeout(5000) 
+            signal: createAbortSignal(5000) 
           });
           const data3 = await res3.json();
           
@@ -169,57 +175,6 @@ const MainAppContent: React.FC = () => {
           setLocationName('Unknown');
           return fallback;
         }
-      }
-    }
-  };
-      setIpInfo(result);
-      setUserCountry(result.country);
-      setLocationName(result.country);
-      return result;
-    } catch (e) {
-      try {
-        // Try ipify first (most reliable, free, no rate limit)
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        const userIp = ipData.ip;
-        
-        // Try to get location with timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        try {
-          const locRes = await fetch(`https://ip-api.com/json/${userIp}?fields=country`, { 
-            signal: controller.signal 
-          });
-          clearTimeout(timeoutId);
-          const locData = await locRes.json();
-          
-          const result = { 
-            ip: userIp || 'Unknown', 
-            country: locData.country || 'Unknown' 
-          };
-          setIpInfo(result);
-          setUserCountry(result.country);
-          setLocationName(result.country);
-          return result;
-        } catch (locErr) {
-          clearTimeout(timeoutId);
-          console.log("[v0] Location lookup failed, returning IP only");
-          const result = { 
-            ip: userIp || 'Unknown', 
-            country: 'Unknown' 
-          };
-          setIpInfo(result);
-          setUserCountry('Unknown');
-          setLocationName('Unknown');
-          return result;
-        }
-      } catch (e2) {
-        const fallback = { ip: 'Unknown', country: 'Unknown' };
-        setIpInfo(fallback);
-        setUserCountry('Unknown');
-        setLocationName('Unknown');
-        return fallback;
       }
     }
   };
