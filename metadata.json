@@ -1,0 +1,8 @@
+
+{
+  "name": "AliExpress Login Clone with Security",
+  "description": "A secure entry flow featuring a professional CAPTCHA challenge before accessing the AliExpress login interface, including visitor logging via Telegram.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
